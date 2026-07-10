@@ -30,6 +30,12 @@ type Repo struct {
 }
 
 type CommitCommentEventPayload struct {
+	Action string
+	Comment CommitComment
+}
+
+type CommitComment struct {
+	
 }
 
 type CreateEventPayload struct {
