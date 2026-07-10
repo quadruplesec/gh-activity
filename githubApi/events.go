@@ -5,28 +5,28 @@ import (
 )
 
 type GithubEvent struct {
-	id        int
-	type_     string
-	actor     Actor
-	repo      Repo
-	payload   json.RawMessage
-	public    bool
-	createdAt string
+	Id        int
+	Type     string
+	Actor     Actor
+	Repo      Repo
+	Payload   json.RawMessage
+	Public    bool
+	CreatedAt string
 }
 
 type Actor struct {
-	id            int
-	login         string
-	display_login string
-	gravatar_id   string
-	url           string
-	avatar_url    string
+	Id            int
+	Login         string
+	Display_login string
+	Gravatar_id   string
+	Url           string
+	Avatar_url    string
 }
 
 type Repo struct {
-	id   int
-	name string
-	url  string
+	Id   int
+	Name string
+	Url  string
 }
 
 type CommitCommentEventPayload struct {
