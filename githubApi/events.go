@@ -6,8 +6,9 @@ import (
 	"fmt"
 )
 
+// Documentation says ID should be integer but it returns a string...
 type GithubEvent struct {
-	Id        int             `json:"id"`
+	Id        string             `json:"id"`
 	Type      string          `json:"type"`
 	Actor     User            `json:"actor"`
 	Repo      Repo            `json:"repo"`
@@ -336,7 +337,8 @@ type PushEventPayload struct {
 	RepositoryId int    `json:"repository_id"`
 	PushId       int    `json:"push_id"`
 	Ref          string `json:"ref"`
-	Size         int    `json:"size"`
+	Head         string `json:"head"`
+    Before       string `json:"before"`
 }
 
 type ReleaseEventPayload struct {
@@ -427,7 +429,11 @@ func (payload PullRequestReviewCommentEventPayload) FormatActivity(user User, re
 }
 
 func (payload PushEventPayload) FormatActivity(user User, repo Repo) string {
-	return fmt.Sprintf(" - Pushed %d commits to %s", payload.Size, repo.Name)
+    branch := payload.Ref
+    if len(branch) > 11 && branch[:11] == "refs/heads/" {
+        branch = branch[11:]
+    }
+    return fmt.Sprintf(" - Pushed to branch '%s' in %s", branch, repo.Name)
 }
 
 func (payload ReleaseEventPayload) FormatActivity(user User, repo Repo) string {

@@ -18,14 +18,10 @@ import (
 
 func main() {
 	if len(os.Args) != 2 {
-		log.Println("Usage: ./github-user-activity <username>")
-		return
-	}
+		log.Println("Usage: ./github-user-activity <username>")	}
 
 	var username string = os.Args[1]
 	var request string = fmt.Sprintf("https://api.github.com/users/%s/events", username)
-
-	// TODO : Check if err automatically handles non-existent users. If not, handle that
 
 	resp, err := http.Get(request)
 	if err != nil {
@@ -40,9 +36,17 @@ func main() {
 	if err != nil {
 		log.Printf("Error: %s", err)
 	}
-	fmt.Printf("%v", jsonResponse)
 
+	fmt.Printf("Recent Github Activity of %s:\n", username)
 	for i := 0; i < len(jsonResponse); i++ {
-
+		formatter, err := jsonResponse[i].UnmarshalEventPayload()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Println(formatter.FormatActivity(
+			jsonResponse[i].Actor,
+			jsonResponse[i].Repo,
+		))
 	}
 }
