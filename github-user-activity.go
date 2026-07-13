@@ -25,6 +25,10 @@ func main() {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		log.Fatalf("GitHub API returned status: %s", resp.Status)
+	}
+
 	body, err := io.ReadAll(resp.Body)
 	var jsonResponse []githubapi.GithubEvent
 	err = json.Unmarshal(body, &jsonResponse)

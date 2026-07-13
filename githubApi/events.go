@@ -501,7 +501,7 @@ func (event *GithubEvent) UnmarshalEventPayload() (ActivityFormatter, error) {
 	default:
 		return nil, UnmarshalEventPayloadError{
 			eventType: event.Type,
-			message:   "Unknown Github Event Type",
+			message:   "Unknown GitHub Event Type",
 		}
 	}
 }
