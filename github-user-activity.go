@@ -47,7 +47,7 @@ func main() {
 	pushCount := 0
 	pushRepo := ""
 
-	fmt.Printf("Recent Github Activity of %s:\n", username)
+	fmt.Printf("Recent GitHub Activity of %s:\n", username)
 	for _, event := range jsonResponse {
 		if event.Type == "PushEvent" {
 			if pushRepo == "" || pushRepo == event.Repo.Name {
