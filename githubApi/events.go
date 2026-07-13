@@ -156,7 +156,7 @@ type Repository struct {
 	IsTemplate          bool        `json:"is_template"`
 	License             License     `json:"license"`
 	Topics              []string    `json:"topics"`
-	HasUssues           bool        `json:"has_issues"`
+	HasIssues           bool        `json:"has_issues"`
 	HasProjects         bool        `json:"has_projects"`
 	HasWiki             bool        `json:"has_wiki"`
 	HasPages            bool        `json:"has_pages"`
@@ -216,52 +216,135 @@ type IssueCommentEventPayload struct {
 }
 
 type Issue struct {
-	Id            int     `json:"id"`
-	NodeId        string  `json:"node_id"`
-	Url           string  `json:"url"`
-	RepositoryUrl string  `json:"repository_url"`
-	LabelsUrl     string  `json:"labels_url"`
-	CommentsUrl   string  `json:"comments_url"`
-	EventsUrl     string  `json:"events_url"`
-	HtmlUrl       string  `json:"html_url"`
-	Number        int     `json:"number"`
-	State         string  `json:"state"`
-	StateReason   string  `json:"state_reason"`
-	Title         string  `json:"title"`
-	Body          string  `json:"body"`
-	User          User    `json:"user"`
-	Labels        []Label `json:"labels"`
+	Id                int                 `json:"id"`
+	NodeId            string              `json:"node_id"`
+	Url               string              `json:"url"`
+	RepositoryUrl     string              `json:"repository_url"`
+	LabelsUrl         string              `json:"labels_url"`
+	CommentsUrl       string              `json:"comments_url"`
+	EventsUrl         string              `json:"events_url"`
+	HtmlUrl           string              `json:"html_url"`
+	Number            int                 `json:"number"`
+	State             string              `json:"state"`
+	StateReason       string              `json:"state_reason"`
+	Title             string              `json:"title"`
+	Body              string              `json:"body"`
+	User              User                `json:"user"`
+	Labels            []Label             `json:"labels"`
+	Assignees         []User              `json:"assignees"`
+	Milestone         *Milestone          `json:"milestone"`
+	Locked            bool                `json:"locked"`
+	ActiveLockReason  string              `json:"active_lock_reason"`
+	Comments          int                 `json:"comments"`
+	PullRequest       *PullRequestSummary `json:"pull_request"`
+	ClosedAt          string              `json:"closed_at"`
+	CreatedAt         string              `json:"created_at"`
+	UpdatedAt         string              `json:"updated_at"`
+	ClosedBy          *User               `json:"closed_by"`
+	AuthorAssociation string              `json:"author_association"`
 }
 
 type Label struct {
+	Id          int    `json:"id"`
+	NodeId      string `json:"node_id"`
+	Url         string `json:"url"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Color       string `json:"color"`
+	Default     bool   `json:"default"`
+}
+
+type Milestone struct {
+	Url          string `json:"url"`
+	HtmlUrl      string `json:"html_url"`
+	LabelsUrl    string `json:"labels_url"`
+	Id           int    `json:"id"`
+	NodeId       string `json:"node_id"`
+	Number       int    `json:"number"`
+	State        string `json:"state"`
+	Title        string `json:"title"`
+	Description  string `json:"description"`
+	Creator      User   `json:"creator"`
+	OpenIssues   int    `json:"open_issues"`
+	ClosedIssues int    `json:"closed_issues"`
+	CreatedAt    string `json:"created_at"`
+	UpdatedAt    string `json:"updated_at"`
+	ClosedAt     string `json:"closed_at"`
+	DueOn        string `json:"due_on"`
+}
+
+type PullRequestSummary struct {
+	Id       int    `json:"id"`
+	NodeId   string `json:"node_id"`
+	MergedAt string `json:"merged_at"`
+	Url      string `json:"url"`
+	HtmlUrl  string `json:"html_url"`
+	DiffUrl  string `json:"diff_url"`
+	PatchUrl string `json:"patch_url"`
 }
 
 type Comment struct {
+	Body string `json:"body"`
 }
 
 type IssuesEventPayload struct {
+	Action string `json:"action"`
+	Issue  Issue  `json:"issue"`
 }
 
 type MemberEventPayload struct {
+	Action string `json:"action"`
+	Member User   `json:"member"`
 }
 
 type PublicEventPayload struct {
+	// Empty Payload
 }
 
 type PullRequestEventPayload struct {
+	Action      string      `json:"action"`
+	Number      int         `json:"number"`
+	PullRequest PullRequest `json:"pull_request"`
+}
+
+type PullRequest struct {
+	Number int             `json:"number"`
+	Title  string          `json:"title"`
+	User   User            `json:"user"`
+	Body   string          `json:"body"`
+	Head   PullRequestHead `json:"head"`
+}
+
+type PullRequestHead struct {
+	Repo Repo `json:"repo"`
 }
 
 type PullRequestReviewEventPayload struct {
+	Action      string      `json:"action"`
+	PullRequest PullRequest `json:"pull_request"`
 }
 
 type PullRequestReviewCommentEventPayload struct {
+	Action      string      `json:"action"`
+	PullRequest PullRequest `json:"pull_request"`
 }
 
 type PushEventPayload struct {
+	RepositoryId int    `json:"repository_id"`
+	PushId       int    `json:"push_id"`
+	Ref          string `json:"ref"`
 }
 
 type ReleaseEventPayload struct {
+	Action  string  `json:"action"`
+	Release Release `json:"release"`
+}
+
+type Release struct {
+	TagName string `json:"tag_name"`
+	Name    string `json:"name"`
 }
 
 type WatchEventPayload struct {
+	Action string `json:"action"`
 }
