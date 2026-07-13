@@ -10,6 +10,17 @@ import (
 	"github.com/quadruplesec/github-user-activity/githubApi"
 )
 
+func printPushes(count int, repo string) {
+	if count == 0 {
+		return
+	}
+	word := "commits"
+	if count == 1 {
+		word = "commit"
+	}
+	fmt.Printf(" - Pushed %d %s to %s\n", count, word, repo)
+}
+
 func main() {
 	if len(os.Args) != 2 {
 		log.Fatal("Usage: ./github-user-activity <username>")
@@ -33,8 +44,30 @@ func main() {
 		log.Fatalf("Error parsing JSON: %v", err)
 	}
 
+	pushCount := 0
+	pushRepo := ""
+
 	fmt.Printf("Recent Github Activity of %s:\n", username)
 	for _, event := range jsonResponse {
+		if event.Type == "PushEvent" {
+			if pushRepo == "" || pushRepo == event.Repo.Name {
+				pushRepo = event.Repo.Name
+				pushCount++
+				continue
+			}
+
+			printPushes(pushCount, pushRepo)
+			pushRepo = event.Repo.Name
+			pushCount = 1
+			continue
+		}
+
+		if pushCount > 0 {
+			printPushes(pushCount, pushRepo)
+			pushRepo = ""
+			pushCount = 0
+		}
+
 		formatter, err := event.UnmarshalEventPayload()
 		if err != nil {
 			fmt.Println(err)
