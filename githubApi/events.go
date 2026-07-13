@@ -42,10 +42,6 @@ type CommitComment struct {
 	AuthorAssociation string `json:"author_association"`
 }
 
-func (payload CommitCommentEventPayload) FormatActivity(user User, repo Repo) string {
-	return fmt.Sprintf(" - Commented on commit %s in %s", payload.Comment.CommitId[:7], repo.Name)
-}
-
 type User struct {
 	Login             string `json:"login"`
 	Id                int    `json:"id"`
@@ -89,7 +85,8 @@ type DiscussionEventPayload struct {
 }
 
 type Discussion struct {
-	// TODO
+	Number int    `json:"number"`
+	Title  string `json:"title"`
 }
 
 type ForkEventPayload struct {
@@ -338,6 +335,7 @@ type PushEventPayload struct {
 	RepositoryId int    `json:"repository_id"`
 	PushId       int    `json:"push_id"`
 	Ref          string `json:"ref"`
+	Size         int    `json:"size"`
 }
 
 type ReleaseEventPayload struct {
@@ -358,6 +356,87 @@ type ActivityFormatter interface {
 	FormatActivity(User, Repo) string
 }
 
+func (payload CommitCommentEventPayload) FormatActivity(user User, repo Repo) string {
+	return fmt.Sprintf(" - Commented \"%s\" on commit %s in %s", payload.Comment.Body, payload.Comment.CommitId[:7], repo.Name)
+}
+
+func (payload CreateEventPayload) FormatActivity(user User, repo Repo) string {
+	if payload.RefType == "repository" {
+		return fmt.Sprintf(" - Created repository %s", repo.Name)
+	}
+
+	return fmt.Sprintf(" - Created %s '%s' in %s", payload.RefType, payload.Ref, repo.Name)
+}
+
+func (payload DeleteEventPayload) FormatActivity(user User, repo Repo) string {
+	return fmt.Sprintf(" - Deleted %s '%s' in %s", payload.RefType, payload.Ref, repo.Name)
+}
+
+func (payload DiscussionEventPayload) FormatActivity(user User, repo Repo) string {
+	return fmt.Sprintf(" - %s discussion #%d in %s: \"%s\"", payload.Action, payload.Discussion.Number, repo.Name, payload.Discussion.Title)
+}
+
+func (payload ForkEventPayload) FormatActivity(user User, repo Repo) string {
+	return fmt.Sprintf(" - Forked %s to %s", repo.Name, payload.Forkee.FullName)
+}
+
+func (payload GollumEventPayload) FormatActivity(user User, repo Repo) string {
+	if len(payload.Pages) == 0 {
+		return fmt.Sprintf(" - Updated wiki in %s", repo.Name)
+	}
+
+	if len(payload.Pages) == 1 {
+		return fmt.Sprintf(" - %s wiki page '%s' in %s", payload.Pages[0].Action, payload.Pages[0].Title, repo.Name)
+	}
+
+	return fmt.Sprintf(" - Updated %d wiki pages in %s", len(payload.Pages), repo.Name)
+}
+
+func (payload IssueCommentEventPayload) FormatActivity(user User, repo Repo) string {
+	target := "issue"
+	if payload.Issue.PullRequest != nil {
+		target = "pull request"
+	}
+
+	return fmt.Sprintf(" - %s comment on %s #%d in %s", payload.Action, target, payload.Issue.Number, repo.Name)
+}
+
+func (payload IssuesEventPayload) FormatActivity(user User, repo Repo) string {
+	return fmt.Sprintf(" - %s issue #%d in %s: \"%s\"", payload.Action, payload.Issue.Number, repo.Name, payload.Issue.Title)
+}
+
+func (payload MemberEventPayload) FormatActivity(user User, repo Repo) string {
+	return fmt.Sprintf(" - %s %s as a collaborator to %s", payload.Action, payload.Member.Login, repo.Name)
+}
+
+func (payload PublicEventPayload) FormatActivity(user User, repo Repo) string {
+	return fmt.Sprintf(" - Made %s public", repo.Name)
+}
+
+func (payload PullRequestEventPayload) FormatActivity(user User, repo Repo) string {
+	return fmt.Sprintf(" - %s pull request #%d in %s: \"%s\"", payload.Action, payload.Number, repo.Name, payload.PullRequest.Title)
+}
+
+func (payload PullRequestReviewEventPayload) FormatActivity(user User, repo Repo) string {
+	return fmt.Sprintf(" - %s a review on pull request #%d in %s", payload.Action, payload.PullRequest.Number, repo.Name)
+}
+
+func (payload PullRequestReviewCommentEventPayload) FormatActivity(user User, repo Repo) string {
+	return fmt.Sprintf(" - %s a review comment on pull request #%d in %s", payload.Action, payload.PullRequest.Number, repo.Name)
+}
+
+func (payload PushEventPayload) FormatActivity(user User, repo Repo) string {
+	return fmt.Sprintf(" - Pushed %d commits to %s", payload.Size, repo.Name)
+}
+
+func (payload ReleaseEventPayload) FormatActivity(user User, repo Repo) string {
+	return fmt.Sprintf(" - %s release %s in %s", payload.Action, payload.Release.TagName, repo.Name)
+}
+
+func (payload WatchEventPayload) FormatActivity(user User, repo Repo) string {
+	return fmt.Sprintf(" - Starred %s", repo.Name)
+}
+
 type UnmarshalEventPayloadError struct {
 	eventType string
 	message   string
@@ -371,27 +450,116 @@ func (event *GithubEvent) UnmarshalEventPayload() (ActivityFormatter, error) {
 	switch event.Type {
 	case "CommitCommentEvent":
 		var payload CommitCommentEventPayload
-		err := json.Unmarshal(event.Payload, payload)
+		err := json.Unmarshal(event.Payload, &payload)
 		if err != nil {
 			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
 		}
 		return payload, nil
-
 	case "CreateEvent":
+		var payload CreateEventPayload
+		err := json.Unmarshal(event.Payload, &payload)
+		if err != nil {
+			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
+		}
+		return payload, nil
 	case "DeleteEvent":
+		var payload DeleteEventPayload
+		err := json.Unmarshal(event.Payload, &payload)
+		if err != nil {
+			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
+		}
+		return payload, nil
 	case "DiscussionEvent":
+		var payload DiscussionEventPayload
+		err := json.Unmarshal(event.Payload, &payload)
+		if err != nil {
+			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
+		}
+		return payload, nil
 	case "ForkEvent":
+		var payload ForkEventPayload
+		err := json.Unmarshal(event.Payload, &payload)
+		if err != nil {
+			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
+		}
+		return payload, nil
 	case "GollumEvent":
+		var payload GollumEventPayload
+		err := json.Unmarshal(event.Payload, &payload)
+		if err != nil {
+			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
+		}
+		return payload, nil
 	case "IssueCommentEvent":
+		var payload IssueCommentEventPayload
+		err := json.Unmarshal(event.Payload, &payload)
+		if err != nil {
+			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
+		}
+		return payload, nil
 	case "IssuesEvent":
+		var payload IssuesEventPayload
+		err := json.Unmarshal(event.Payload, &payload)
+		if err != nil {
+			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
+		}
+		return payload, nil
 	case "MemberEvent":
+		var payload MemberEventPayload
+		err := json.Unmarshal(event.Payload, &payload)
+		if err != nil {
+			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
+		}
+		return payload, nil
 	case "PublicEvent":
+		var payload PublicEventPayload
+		err := json.Unmarshal(event.Payload, &payload)
+		if err != nil {
+			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
+		}
+		return payload, nil
 	case "PullRequestEvent":
+		var payload PullRequestEventPayload
+		err := json.Unmarshal(event.Payload, &payload)
+		if err != nil {
+			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
+		}
+		return payload, nil
 	case "PullRequestReviewEvent":
+		var payload PullRequestReviewEventPayload
+		err := json.Unmarshal(event.Payload, &payload)
+		if err != nil {
+			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
+		}
+		return payload, nil
 	case "PullRequestReviewCommentEvent":
+		var payload PullRequestReviewCommentEventPayload
+		err := json.Unmarshal(event.Payload, &payload)
+		if err != nil {
+			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
+		}
+		return payload, nil
 	case "PushEvent":
+		var payload PushEventPayload
+		err := json.Unmarshal(event.Payload, &payload)
+		if err != nil {
+			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
+		}
+		return payload, nil
 	case "ReleaseEvent":
+		var payload ReleaseEventPayload
+		err := json.Unmarshal(event.Payload, &payload)
+		if err != nil {
+			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
+		}
+		return payload, nil
 	case "WatchEvent":
+		var payload WatchEventPayload
+		err := json.Unmarshal(event.Payload, &payload)
+		if err != nil {
+			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
+		}
+		return payload, nil
 	default:
 		return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "Unknown Github Event Type"}
 	}
