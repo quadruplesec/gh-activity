@@ -206,6 +206,16 @@ type License struct {
 }
 
 type GollumEventPayload struct {
+	Pages []Page `json:"pages"`
+}
+
+type Page struct {
+	Page_name string `json:"page_name"`
+	Title     string `json:"title"`
+	Summary   string `json:"summary"`
+	Action    string `json:"action"`
+	Sha       string `json:"sha"`
+	Html_url  string `json:"html_url"`
 }
 
 type IssueCommentEventPayload struct {
