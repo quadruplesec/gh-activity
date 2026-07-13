@@ -34,14 +34,12 @@ func main() {
 	}
 
 	fmt.Printf("Recent Github Activity of %s:\n", username)
-	for i := 0; i < len(jsonResponse); i++ {
-		formatter, err := jsonResponse[i].UnmarshalEventPayload()
+	for _, event := range jsonResponse {
+		formatter, err := event.UnmarshalEventPayload()
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
+			continue
 		}
-		fmt.Println(formatter.FormatActivity(
-			jsonResponse[i].Actor,
-			jsonResponse[i].Repo,
-		))
+		fmt.Println(formatter.FormatActivity(event.Actor, event.Repo))
 	}
 }
