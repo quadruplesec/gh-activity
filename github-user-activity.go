@@ -3,10 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"os"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/quadruplesec/github-user-activity/githubApi"
 )
@@ -29,11 +28,9 @@ func main() {
 		log.Fatalf("GitHub API returned status: %s", resp.Status)
 	}
 
-	body, err := io.ReadAll(resp.Body)
 	var jsonResponse []githubapi.GithubEvent
-	err = json.Unmarshal(body, &jsonResponse)
-	if err != nil {
-		log.Fatalf("Error: %s", err)
+	if err := json.NewDecoder(resp.Body).Decode(&jsonResponse); err != nil {
+		log.Fatalf("Error parsing JSON: %v", err)
 	}
 
 	fmt.Printf("Recent Github Activity of %s:\n", username)
