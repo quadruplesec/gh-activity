@@ -2,6 +2,7 @@ package githubapi
 
 import (
 	"encoding/json"
+	
 	"fmt"
 )
 
@@ -446,121 +447,55 @@ func (e UnmarshalEventPayloadError) Error() string {
 	return fmt.Sprintf("%s: %s", e.message, e.eventType)
 }
 
+func unmarshalPayload[T ActivityFormatter](data []byte, eventType string) (ActivityFormatter, error) {
+	var payload T
+	if err := json.Unmarshal(data, &payload); err != nil {
+		return nil, UnmarshalEventPayloadError{
+			eventType: eventType,
+			message:   "An error occurred when unmarshaling a payload of type",
+		}
+	}
+	return payload, nil
+}
+
 func (event *GithubEvent) UnmarshalEventPayload() (ActivityFormatter, error) {
 	switch event.Type {
 	case "CommitCommentEvent":
-		var payload CommitCommentEventPayload
-		err := json.Unmarshal(event.Payload, &payload)
-		if err != nil {
-			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
-		}
-		return payload, nil
+		return unmarshalPayload[CommitCommentEventPayload](event.Payload, event.Type)
 	case "CreateEvent":
-		var payload CreateEventPayload
-		err := json.Unmarshal(event.Payload, &payload)
-		if err != nil {
-			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
-		}
-		return payload, nil
+		return unmarshalPayload[CreateEventPayload](event.Payload, event.Type)
 	case "DeleteEvent":
-		var payload DeleteEventPayload
-		err := json.Unmarshal(event.Payload, &payload)
-		if err != nil {
-			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
-		}
-		return payload, nil
+		return unmarshalPayload[DeleteEventPayload](event.Payload, event.Type)
 	case "DiscussionEvent":
-		var payload DiscussionEventPayload
-		err := json.Unmarshal(event.Payload, &payload)
-		if err != nil {
-			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
-		}
-		return payload, nil
+		return unmarshalPayload[DiscussionEventPayload](event.Payload, event.Type)
 	case "ForkEvent":
-		var payload ForkEventPayload
-		err := json.Unmarshal(event.Payload, &payload)
-		if err != nil {
-			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
-		}
-		return payload, nil
+		return unmarshalPayload[ForkEventPayload](event.Payload, event.Type)
 	case "GollumEvent":
-		var payload GollumEventPayload
-		err := json.Unmarshal(event.Payload, &payload)
-		if err != nil {
-			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
-		}
-		return payload, nil
+		return unmarshalPayload[GollumEventPayload](event.Payload, event.Type)
 	case "IssueCommentEvent":
-		var payload IssueCommentEventPayload
-		err := json.Unmarshal(event.Payload, &payload)
-		if err != nil {
-			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
-		}
-		return payload, nil
+		return unmarshalPayload[IssueCommentEventPayload](event.Payload, event.Type)
 	case "IssuesEvent":
-		var payload IssuesEventPayload
-		err := json.Unmarshal(event.Payload, &payload)
-		if err != nil {
-			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
-		}
-		return payload, nil
+		return unmarshalPayload[IssuesEventPayload](event.Payload, event.Type)
 	case "MemberEvent":
-		var payload MemberEventPayload
-		err := json.Unmarshal(event.Payload, &payload)
-		if err != nil {
-			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
-		}
-		return payload, nil
+		return unmarshalPayload[MemberEventPayload](event.Payload, event.Type)
 	case "PublicEvent":
-		var payload PublicEventPayload
-		err := json.Unmarshal(event.Payload, &payload)
-		if err != nil {
-			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
-		}
-		return payload, nil
+		return unmarshalPayload[PublicEventPayload](event.Payload, event.Type)
 	case "PullRequestEvent":
-		var payload PullRequestEventPayload
-		err := json.Unmarshal(event.Payload, &payload)
-		if err != nil {
-			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
-		}
-		return payload, nil
+		return unmarshalPayload[PullRequestEventPayload](event.Payload, event.Type)
 	case "PullRequestReviewEvent":
-		var payload PullRequestReviewEventPayload
-		err := json.Unmarshal(event.Payload, &payload)
-		if err != nil {
-			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
-		}
-		return payload, nil
+		return unmarshalPayload[PullRequestReviewEventPayload](event.Payload, event.Type)
 	case "PullRequestReviewCommentEvent":
-		var payload PullRequestReviewCommentEventPayload
-		err := json.Unmarshal(event.Payload, &payload)
-		if err != nil {
-			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
-		}
-		return payload, nil
+		return unmarshalPayload[PullRequestReviewCommentEventPayload](event.Payload, event.Type)
 	case "PushEvent":
-		var payload PushEventPayload
-		err := json.Unmarshal(event.Payload, &payload)
-		if err != nil {
-			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
-		}
-		return payload, nil
+		return unmarshalPayload[PushEventPayload](event.Payload, event.Type)
 	case "ReleaseEvent":
-		var payload ReleaseEventPayload
-		err := json.Unmarshal(event.Payload, &payload)
-		if err != nil {
-			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
-		}
-		return payload, nil
+		return unmarshalPayload[ReleaseEventPayload](event.Payload, event.Type)
 	case "WatchEvent":
-		var payload WatchEventPayload
-		err := json.Unmarshal(event.Payload, &payload)
-		if err != nil {
-			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
-		}
-		return payload, nil
+		return unmarshalPayload[WatchEventPayload](event.Payload, event.Type)
 	default:
-		return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "Unknown Github Event Type"}
+		return nil, UnmarshalEventPayloadError{
+			eventType: event.Type,
+			message:   "Unknown Github Event Type",
+		}
 	}
 }
