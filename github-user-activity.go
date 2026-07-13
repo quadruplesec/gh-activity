@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+
 	"fmt"
 
 	"io"
@@ -10,11 +12,14 @@ import (
 	"log"
 
 	"net/http"
+
+	"github.com/quadruplesec/github-user-activity/githubApi"
 )
 
 func main() {
 	if len(os.Args) != 2 {
 		log.Println("Usage: ./github-user-activity <username>")
+		return
 	}
 
 	var username string = os.Args[1]
@@ -30,5 +35,14 @@ func main() {
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 
-	fmt.Println(body)
+	var jsonResponse []githubapi.GithubEvent
+	err = json.Unmarshal(body, &jsonResponse)
+	if err != nil {
+		log.Printf("Error: %s", err)
+	}
+	fmt.Printf("%v", jsonResponse)
+
+	for i := 0; i < len(jsonResponse); i++ {
+
+	}
 }

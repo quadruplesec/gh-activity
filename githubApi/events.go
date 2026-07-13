@@ -2,6 +2,7 @@ package githubapi
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
 type GithubEvent struct {
@@ -39,6 +40,10 @@ type CommitComment struct {
 	CreatedAt         string `json:"created_at"`
 	UpdatedAt         string `json:"updated_at"`
 	AuthorAssociation string `json:"author_association"`
+}
+
+func (payload CommitCommentEventPayload) FormatActivity(user User, repo Repo) string {
+	return fmt.Sprintf(" - Commented on commit %s in %s", payload.Comment.CommitId[:7], repo.Name)
 }
 
 type User struct {
@@ -347,4 +352,47 @@ type Release struct {
 
 type WatchEventPayload struct {
 	Action string `json:"action"`
+}
+
+type ActivityFormatter interface {
+	FormatActivity(User, Repo) string
+}
+
+type UnmarshalEventPayloadError struct {
+	eventType string
+	message   string
+}
+
+func (e UnmarshalEventPayloadError) Error() string {
+	return fmt.Sprintf("%s: %s", e.message, e.eventType)
+}
+
+func (event *GithubEvent) UnmarshalEventPayload() (ActivityFormatter, error) {
+	switch event.Type {
+	case "CommitCommentEvent":
+		var payload CommitCommentEventPayload
+		err := json.Unmarshal(event.Payload, payload)
+		if err != nil {
+			return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "An error occured when unmarshalling a payload of type"}
+		}
+		return payload, nil
+
+	case "CreateEvent":
+	case "DeleteEvent":
+	case "DiscussionEvent":
+	case "ForkEvent":
+	case "GollumEvent":
+	case "IssueCommentEvent":
+	case "IssuesEvent":
+	case "MemberEvent":
+	case "PublicEvent":
+	case "PullRequestEvent":
+	case "PullRequestReviewEvent":
+	case "PullRequestReviewCommentEvent":
+	case "PushEvent":
+	case "ReleaseEvent":
+	case "WatchEvent":
+	default:
+		return nil, UnmarshalEventPayloadError{eventType: event.Type, message: "Unknown Github Event Type"}
+	}
 }
