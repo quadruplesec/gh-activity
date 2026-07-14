@@ -63,6 +63,12 @@ func main() {
 	if *filters != "" {
 		filtersSlice = strings.Split(*filters, " ")
 	}
+	// Check if all filter flags are valid
+	for _, filter := range filtersSlice {
+		if !slices.Contains(validEvents, filter) {
+			log.Fatalf("Invalid filter flag '%s'. Run 'gh-activity -h' for more help.", filter)
+		}
+	}
 
 	username := flag.Args()[0]
 	request := fmt.Sprintf("https://api.github.com/users/%s/events", username)
@@ -82,44 +88,22 @@ func main() {
 		log.Fatalf("Error parsing JSON: %v", err)
 	}
 
-	pushCount := 0
-	pushRepo := ""
 
-	fmt.Printf("%s", github.Colorize(github.Bold, fmt.Sprintf("Recent GitHub Activity of %s:\n", username)))
+	var filteredEvents github.ActivityFeed
 	for _, event := range jsonResponse {
+		// If specific events were set with the filters flag, remove them
 		if len(filtersSlice) > 0 && !slices.Contains(filtersSlice, event.Type) {
-			if pushCount > 0 {
-				printPushes(pushCount, pushRepo)
-				pushRepo = ""
-				pushCount = 0
-			}
 			continue
 		}
-
-		if event.Type == "PushEvent" {
-			if pushRepo == "" || pushRepo == event.Repo.Name {
-				pushRepo = event.Repo.Name
-				pushCount++
-				continue
-			}
-
-			printPushes(pushCount, pushRepo)
-			pushRepo = event.Repo.Name
-			pushCount = 1
-			continue
-		}
-
-		if pushCount > 0 {
-			printPushes(pushCount, pushRepo)
-			pushRepo = ""
-			pushCount = 0
-		}
-
-		formatter, err := event.UnmarshalEventPayload()
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-		fmt.Println(formatter.FormatActivity(event.Actor, event.Repo))
+		filteredEvents = append(filteredEvents, event)
 	}
+
+	fmt.Printf("Recent GitHub Activity of %s:\n", username)
+	if len(filteredEvents) > 0 {
+		for _, line := range filteredEvents.Format() {
+			fmt.Println(line)
+		}	
+		return
+	}
+	fmt.Println("No activity was found.")
 }
