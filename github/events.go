@@ -1,14 +1,12 @@
-package githubapi
+package github
 
 import (
 	"encoding/json"
-	
 	"fmt"
 )
 
-// Documentation says ID should be integer but it returns a string...
-type GithubEvent struct {
-	Id        string             `json:"id"`
+type Event struct {
+	Id        string          `json:"id"` // Documentation says ID should be integer but it returns a string...
 	Type      string          `json:"type"`
 	Actor     User            `json:"actor"`
 	Repo      Repo            `json:"repo"`
@@ -83,7 +81,7 @@ type DeleteEventPayload struct {
 
 type DiscussionEventPayload struct {
 	Action     string     `json:"action"`
-	Discussion Discussion `json:"discussion"` // TODO : Figure how this one works...
+	Discussion Discussion `json:"discussion"`
 }
 
 type Discussion struct {
@@ -301,9 +299,8 @@ type MemberEventPayload struct {
 	Member User   `json:"member"`
 }
 
-type PublicEventPayload struct {
-	// Empty Payload
-}
+// Empty Payload
+type PublicEventPayload struct{}
 
 type PullRequestEventPayload struct {
 	Action      string      `json:"action"`
@@ -338,7 +335,7 @@ type PushEventPayload struct {
 	PushId       int    `json:"push_id"`
 	Ref          string `json:"ref"`
 	Head         string `json:"head"`
-    Before       string `json:"before"`
+	Before       string `json:"before"`
 }
 
 type ReleaseEventPayload struct {
@@ -360,88 +357,138 @@ type ActivityFormatter interface {
 }
 
 func (payload CommitCommentEventPayload) FormatActivity(user User, repo Repo) string {
-	return fmt.Sprintf(" - Commented \"%s\" on commit %s in %s", payload.Comment.Body, payload.Comment.CommitId[:7], repo.Name)
+	action := Colorize(GetEventColor("CommitCommentEvent"), "Commented")
+	commit := Colorize(Cyan, payload.Comment.CommitId[:7])
+	targetRepo := Colorize(Bold, repo.Name)
+	return fmt.Sprintf(" - %s \"%s\" on commit %s in %s", action, payload.Comment.Body, commit, targetRepo)
 }
 
 func (payload CreateEventPayload) FormatActivity(user User, repo Repo) string {
+	targetRepo := Colorize(Bold, repo.Name)
+
 	if payload.RefType == "repository" {
-		return fmt.Sprintf(" - Created repository %s", repo.Name)
+		action := Colorize(GetEventColor("CreateEvent"), "Created")
+		return fmt.Sprintf(" - %s repository %s", action, targetRepo)
 	}
 
-	return fmt.Sprintf(" - Created %s '%s' in %s", payload.RefType, payload.Ref, repo.Name)
+	action := Colorize(GetEventColor("CreateEvent"), fmt.Sprintf("Created %s", payload.RefType))
+	ref := Colorize(Cyan, payload.Ref)
+	return fmt.Sprintf(" - %s '%s' in %s", action, ref, targetRepo)
 }
 
 func (payload DeleteEventPayload) FormatActivity(user User, repo Repo) string {
-	return fmt.Sprintf(" - Deleted %s '%s' in %s", payload.RefType, payload.Ref, repo.Name)
+	action := Colorize(GetEventColor("DeleteEvent"), fmt.Sprintf("Deleted %s", payload.RefType))
+	ref := Colorize(Cyan, payload.Ref)
+	targetRepo := Colorize(Bold, repo.Name)
+	return fmt.Sprintf(" - %s '%s' in %s", action, ref, targetRepo)
 }
 
 func (payload DiscussionEventPayload) FormatActivity(user User, repo Repo) string {
-	return fmt.Sprintf(" - %s discussion #%d in %s: \"%s\"", payload.Action, payload.Discussion.Number, repo.Name, payload.Discussion.Title)
+	action := Colorize(GetEventColor("DiscussionEvent"), fmt.Sprintf("%s discussion", payload.Action))
+	discussionNumber := Colorize(Cyan, fmt.Sprintf("#%d", payload.Discussion.Number))
+	targetRepo := Colorize(Bold, repo.Name)
+	return fmt.Sprintf(" - %s %s in %s: \"%s\"", action, discussionNumber, targetRepo, payload.Discussion.Title)
 }
 
 func (payload ForkEventPayload) FormatActivity(user User, repo Repo) string {
-	return fmt.Sprintf(" - Forked %s to %s", repo.Name, payload.Forkee.FullName)
+	action := Colorize(GetEventColor("ForkEvent"), fmt.Sprintf("Forked %s", repo.Name))
+	forkee := Colorize(Bold, payload.Forkee.FullName)
+	return fmt.Sprintf(" - %s to %s", action, forkee)
 }
 
 func (payload GollumEventPayload) FormatActivity(user User, repo Repo) string {
+	targetRepo := Colorize(Bold, repo.Name)
+
 	if len(payload.Pages) == 0 {
-		return fmt.Sprintf(" - Updated wiki in %s", repo.Name)
+		action := Colorize(GetEventColor("GollumEvent"), "Updated")
+		return fmt.Sprintf(" - %s wiki in %s", action, targetRepo)
 	}
 
 	if len(payload.Pages) == 1 {
-		return fmt.Sprintf(" - %s wiki page '%s' in %s", payload.Pages[0].Action, payload.Pages[0].Title, repo.Name)
+		action := Colorize(GetEventColor("GollumEvent"), payload.Pages[0].Action)
+		pageTitle := Colorize(Cyan, payload.Pages[0].Title)
+		return fmt.Sprintf(" - %s wiki page '%s' in %s", action, pageTitle, targetRepo)
 	}
 
-	return fmt.Sprintf(" - Updated %d wiki pages in %s", len(payload.Pages), repo.Name)
+	action := Colorize(GetEventColor("GollumEvent"), "Updated")
+	pageCount := Colorize(Cyan, fmt.Sprintf("%d", len(payload.Pages)))
+	return fmt.Sprintf(" - %s %s wiki pages in %s", action, pageCount, targetRepo)
 }
 
 func (payload IssueCommentEventPayload) FormatActivity(user User, repo Repo) string {
+	action := Colorize(GetEventColor("IssueCommentEvent"), payload.Action)
+	targetRepo := Colorize(Bold, repo.Name)
 	target := "issue"
 	if payload.Issue.PullRequest != nil {
 		target = "pull request"
 	}
-
-	return fmt.Sprintf(" - %s comment on %s #%d in %s", payload.Action, target, payload.Issue.Number, repo.Name)
+	issueNumber := Colorize(Cyan, fmt.Sprintf("#%d", payload.Issue.Number))
+	return fmt.Sprintf(" - %s comment on %s %s in %s", action, target, issueNumber, targetRepo)
 }
 
 func (payload IssuesEventPayload) FormatActivity(user User, repo Repo) string {
-	return fmt.Sprintf(" - %s issue #%d in %s: \"%s\"", payload.Action, payload.Issue.Number, repo.Name, payload.Issue.Title)
+	action := Colorize(GetEventColor("IssuesEvent"), payload.Action)
+	issueNumber := Colorize(Cyan, fmt.Sprintf("#%d", payload.Issue.Number))
+	targetRepo := Colorize(Bold, repo.Name)
+	return fmt.Sprintf(" - %s issue %s in %s: \"%s\"", action, issueNumber, targetRepo, payload.Issue.Title)
 }
 
 func (payload MemberEventPayload) FormatActivity(user User, repo Repo) string {
-	return fmt.Sprintf(" - %s %s as a collaborator to %s", payload.Action, payload.Member.Login, repo.Name)
+	action := Colorize(GetEventColor("MemberEvent"), payload.Action)
+	member := Colorize(Cyan, payload.Member.Login)
+	targetRepo := Colorize(Bold, repo.Name)
+	return fmt.Sprintf(" - %s %s as a collaborator to %s", action, member, targetRepo)
 }
 
 func (payload PublicEventPayload) FormatActivity(user User, repo Repo) string {
-	return fmt.Sprintf(" - Made %s public", repo.Name)
+	action := Colorize(GetEventColor("PublicEvent"), "Made")
+	targetRepo := Colorize(Bold, repo.Name)
+	return fmt.Sprintf(" - %s %s public", action, targetRepo)
 }
 
 func (payload PullRequestEventPayload) FormatActivity(user User, repo Repo) string {
-	return fmt.Sprintf(" - %s pull request #%d in %s: \"%s\"", payload.Action, payload.Number, repo.Name, payload.PullRequest.Title)
+	action := Colorize(GetEventColor("PullRequestEvent"), fmt.Sprintf("%s pull request", payload.Action))
+	number := Colorize(Cyan, fmt.Sprintf("%d", payload.Number))
+	targetRepo := Colorize(Bold, repo.Name)
+	return fmt.Sprintf(" - %s #%s in %s: \"%s\"", action, number, targetRepo, payload.PullRequest.Title)
 }
 
 func (payload PullRequestReviewEventPayload) FormatActivity(user User, repo Repo) string {
-	return fmt.Sprintf(" - %s a review on pull request #%d in %s", payload.Action, payload.PullRequest.Number, repo.Name)
+	action := Colorize(GetEventColor("PullRequestReviewEvent"), fmt.Sprintf("%s a review", payload.Action))
+	number := Colorize(Cyan, fmt.Sprintf("#%d", payload.PullRequest.Number))
+	targetRepo := Colorize(Bold, repo.Name)
+	return fmt.Sprintf(" - %s on pull request %s in %s", action, number, targetRepo)
 }
 
 func (payload PullRequestReviewCommentEventPayload) FormatActivity(user User, repo Repo) string {
-	return fmt.Sprintf(" - %s a review comment on pull request #%d in %s", payload.Action, payload.PullRequest.Number, repo.Name)
+	action := Colorize(GetEventColor("PullRequestReviewCommentEvent"), fmt.Sprintf("%s a review comment", payload.Action))
+	number := Colorize(Cyan, fmt.Sprintf("#%d", payload.PullRequest.Number))
+	targetRepo := Colorize(Bold, repo.Name)
+	return fmt.Sprintf(" - %s on pull request %s in %s", action, number, targetRepo)
 }
 
 func (payload PushEventPayload) FormatActivity(user User, repo Repo) string {
-    branch := payload.Ref
-    if len(branch) > 11 && branch[:11] == "refs/heads/" {
-        branch = branch[11:]
-    }
-    return fmt.Sprintf(" - Pushed to branch '%s' in %s", branch, repo.Name)
+	branch := payload.Ref
+	if len(branch) > 11 && branch[:11] == "refs/heads/" {
+		branch = branch[11:]
+	}
+	action := Colorize(GetEventColor("PushEvent"), "Pushed to branch")
+	ref := Colorize(Cyan, branch)
+	targetRepo := Colorize(Bold, repo.Name)
+	return fmt.Sprintf(" - %s '%s' in %s", action, ref, targetRepo)
 }
 
 func (payload ReleaseEventPayload) FormatActivity(user User, repo Repo) string {
-	return fmt.Sprintf(" - %s release %s in %s", payload.Action, payload.Release.TagName, repo.Name)
+	action := Colorize(GetEventColor("ReleaseEvent"), fmt.Sprintf("%s release", payload.Action))
+	tag := Colorize(Cyan, payload.Release.TagName)
+	targetRepo := Colorize(Bold, repo.Name)
+	return fmt.Sprintf(" - %s %s in %s", action, tag, targetRepo)
 }
 
 func (payload WatchEventPayload) FormatActivity(user User, repo Repo) string {
-	return fmt.Sprintf(" - Starred %s", repo.Name)
+	action := Colorize(GetEventColor("WatchEvent"), "Starred")
+	targetRepo := Colorize(Bold, repo.Name)
+	return fmt.Sprintf(" - %s %s", action, targetRepo)
 }
 
 type UnmarshalEventPayloadError struct {
@@ -464,7 +511,7 @@ func unmarshalPayload[T ActivityFormatter](data []byte, eventType string) (Activ
 	return payload, nil
 }
 
-func (event *GithubEvent) UnmarshalEventPayload() (ActivityFormatter, error) {
+func (event *Event) UnmarshalEventPayload() (ActivityFormatter, error) {
 	switch event.Type {
 	case "CommitCommentEvent":
 		return unmarshalPayload[CommitCommentEventPayload](event.Payload, event.Type)

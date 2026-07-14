@@ -10,9 +10,10 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/quadruplesec/gh-activity/githubApi"
+	"github.com/quadruplesec/gh-activity/github"
 )
 
+// If count is greater than 1, outputs with plural "commits"; if count is 1, outputs with singular "commit"; if 0, do nothing
 func printPushes(count int, repo string) {
 	if count == 0 {
 		return
@@ -54,7 +55,7 @@ func main() {
 	}
 	flag.Parse()
 
-	if (len(flag.Args()) != 1) {
+	if len(flag.Args()) != 1 {
 		log.Fatalf("Error: Exactly one valid username must be provided after all flags.\nUsage: gh-activity [flags] <username>\nRun 'gh-activity -h' for more help.")
 	}
 
@@ -76,7 +77,7 @@ func main() {
 		log.Fatalf("GitHub API returned status: %s", resp.Status)
 	}
 
-	var jsonResponse []githubapi.GithubEvent
+	var jsonResponse []github.Event
 	if err := json.NewDecoder(resp.Body).Decode(&jsonResponse); err != nil {
 		log.Fatalf("Error parsing JSON: %v", err)
 	}
@@ -84,7 +85,7 @@ func main() {
 	pushCount := 0
 	pushRepo := ""
 
-	fmt.Printf("Recent GitHub Activity of %s:\n", username)
+	fmt.Printf("%s", github.Colorize(github.Bold, fmt.Sprintf("Recent GitHub Activity of %s:\n", username)))
 	for _, event := range jsonResponse {
 		if len(filtersSlice) > 0 && !slices.Contains(filtersSlice, event.Type) {
 			if pushCount > 0 {
