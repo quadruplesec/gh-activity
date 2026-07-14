@@ -1,3 +1,3 @@
-module github.com/quadruplesec/github-user-activity
+module github.com/quadruplesec/gh-activity
 
 go 1.26.5

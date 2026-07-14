@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/quadruplesec/github-user-activity/githubApi"
+	"github.com/quadruplesec/gh-activity/githubApi"
 )
 
 func printPushes(count int, repo string) {
