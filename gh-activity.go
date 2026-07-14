@@ -88,7 +88,6 @@ func main() {
 		log.Fatalf("Error parsing JSON: %v", err)
 	}
 
-
 	var filteredEvents github.ActivityFeed
 	for _, event := range jsonResponse {
 		// If specific events were set with the filters flag, remove them
@@ -102,7 +101,7 @@ func main() {
 	if len(filteredEvents) > 0 {
 		for _, line := range filteredEvents.Format() {
 			fmt.Println(line)
-		}	
+		}
 		return
 	}
 	fmt.Println("No activity was found.")
