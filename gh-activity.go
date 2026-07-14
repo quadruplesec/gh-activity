@@ -2,10 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"slices"
+	"strings"
 
 	"github.com/quadruplesec/gh-activity/githubApi"
 )
@@ -22,11 +25,45 @@ func printPushes(count int, repo string) {
 }
 
 func main() {
-	if len(os.Args) != 2 {
-		log.Fatal("Usage: ./github-user-activity <username>")
+	validEvents := []string{
+		"CommitCommentEvent",
+		"CreateEvent",
+		"DeleteEvent",
+		"DiscussionEvent",
+		"ForkEvent",
+		"GollumEvent",
+		"IssueCommentEvent",
+		"IssuesEvent",
+		"MemberEvent",
+		"PublicEvent",
+		"PullRequestEvent",
+		"PullRequestReviewEvent",
+		"PullRequestReviewCommentEvent",
+		"PushEvent",
+		"ReleaseEvent",
+		"WatchEvent",
 	}
 
-	username := os.Args[1]
+	filtersUsage := fmt.Sprintf("Space-separated list of event types to filter by.\nValid values are:\n - %s",
+		strings.Join(validEvents, "\n - "))
+	filters := flag.String("filters", "", filtersUsage)
+
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: gh-activity [flags] <username>\n\nFlags:\n")
+		flag.PrintDefaults()
+	}
+	flag.Parse()
+
+	if (len(flag.Args()) != 1) {
+		log.Fatalf("Error: Exactly one valid username must be provided after all flags.\nUsage: gh-activity [flags] <username>\nRun 'gh-activity -h' for more help.")
+	}
+
+	var filtersSlice []string
+	if *filters != "" {
+		filtersSlice = strings.Split(*filters, " ")
+	}
+
+	username := flag.Args()[0]
 	request := fmt.Sprintf("https://api.github.com/users/%s/events", username)
 
 	resp, err := http.Get(request)
@@ -49,6 +86,15 @@ func main() {
 
 	fmt.Printf("Recent GitHub Activity of %s:\n", username)
 	for _, event := range jsonResponse {
+		if len(filtersSlice) > 0 && !slices.Contains(filtersSlice, event.Type) {
+			if pushCount > 0 {
+				printPushes(pushCount, pushRepo)
+				pushRepo = ""
+				pushCount = 0
+			}
+			continue
+		}
+
 		if event.Type == "PushEvent" {
 			if pushRepo == "" || pushRepo == event.Repo.Name {
 				pushRepo = event.Repo.Name
