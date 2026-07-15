@@ -16,10 +16,10 @@ type ActivityEnvelope struct {
 }
 
 func URLToCacheKey(urlStr string) string {
-    clean := strings.TrimPrefix(urlStr, "https://api.github.com/")
-    clean = strings.TrimPrefix(clean, "/")
-    clean = strings.ReplaceAll(clean, "/", "_")
-    return clean + ".json"
+	clean := strings.TrimPrefix(urlStr, "https://api.github.com/")
+	clean = strings.TrimPrefix(clean, "/")
+	clean = strings.ReplaceAll(clean, "/", "_")
+	return clean + ".json"
 }
 
 func SaveCache(activity ActivityEnvelope, cacheKey string) error {

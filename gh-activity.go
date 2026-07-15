@@ -73,7 +73,12 @@ func main() {
 	username := flag.Args()[0]
 	request := fmt.Sprintf("https://api.github.com/users/%s/events", username)
 
-	resp, err := http.Get(request)
+	// HTTP client with custom middleware to handle caching
+	client := &http.Client{
+		Transport: github.NewCachingMiddleware(http.DefaultTransport),
+	}
+
+	resp, err := client.Get(request)
 	if err != nil {
 		log.Fatalf("Network error: %v", err)
 	}
