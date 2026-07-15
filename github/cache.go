@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -14,7 +15,14 @@ type ActivityEnvelope struct {
 	TTL       time.Duration `json:"ttl"`
 }
 
-func SaveCache(activity ActivityEnvelope, username string) error {
+func URLToCacheKey(urlStr string) string {
+    clean := strings.TrimPrefix(urlStr, "https://api.github.com/")
+    clean = strings.TrimPrefix(clean, "/")
+    clean = strings.ReplaceAll(clean, "/", "_")
+    return clean + ".json"
+}
+
+func SaveCache(activity ActivityEnvelope, cacheKey string) error {
 	cacheDir, err := os.UserCacheDir()
 	if err != nil {
 		return err
@@ -26,7 +34,7 @@ func SaveCache(activity ActivityEnvelope, username string) error {
 		return err
 	}
 
-	filePath := filepath.Join(appCacheDir, username+".json")
+	filePath := filepath.Join(appCacheDir, cacheKey+".json")
 
 	data, err := json.Marshal(activity)
 	if err != nil {
@@ -40,13 +48,13 @@ func IsStale(envelope ActivityEnvelope) bool {
 	return time.Since(envelope.FetchedAt) > envelope.TTL
 }
 
-func LoadCache(username string) (ActivityEnvelope, error) {
+func LoadCache(cacheKey string) (ActivityEnvelope, error) {
 	cacheDir, err := os.UserCacheDir()
 	if err != nil {
 		return ActivityEnvelope{}, err
 	}
 	appCacheDir := filepath.Join(cacheDir, "gh-activity")
-	filePath := filepath.Join(appCacheDir, username+".json")
+	filePath := filepath.Join(appCacheDir, cacheKey+".json")
 
 	data, err := os.ReadFile(filePath)
 	if err != nil {
