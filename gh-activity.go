@@ -84,6 +84,7 @@ func main() {
 	}
 
 	var wg sync.WaitGroup
+	var mu sync.Mutex
 
 	for _, username := range usernames {
 		wg.Add(1)
@@ -122,14 +123,20 @@ func main() {
 				filteredEvents = append(filteredEvents, event)
 			}
 
+			mu.Lock()
+
 			fmt.Printf("Recent GitHub Activity of %s:\n", username)
 			if len(filteredEvents) > 0 {
 				for _, line := range filteredEvents.Format() {
 					fmt.Println(line)
 				}
-				return
+			} else {
+				fmt.Printf("No activity was found user %s.\n", uname)
 			}
-			fmt.Println("No activity was found.")
+			
+			fmt.Println() // Blank Line between users
+
+			mu.Unlock()
 		}(username)
 	}
 
