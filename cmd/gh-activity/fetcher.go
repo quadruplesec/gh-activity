@@ -24,7 +24,7 @@ func FetchUsers(usernames []string, filtersSlice []string, client *http.Client, 
 		go func(uname string) {
 			defer wg.Done()
 
-			request := fmt.Sprintf("https://api.github.com/users/%s/events", uname)
+			request := fmt.Sprintf("%s/users/%s/events", apiBaseURL, uname)
 
 			resp, err := client.Get(request)
 			if err != nil {
@@ -57,10 +57,10 @@ func FetchUsers(usernames []string, filtersSlice []string, client *http.Client, 
 
 			mu.Lock()
 
-			fmt.Fprintf(out, "Recent GitHub Activity of %s:\n", username)
+			fmt.Fprintf(out, "Recent GitHub Activity of %s:\n", uname)
 			if len(filteredEvents) > 0 {
 				for _, line := range filteredEvents.Format() {
-					fmt.Println(line)
+					fmt.Fprintln(out, line)
 				}
 			} else {
 				fmt.Fprintf(out, "No activity was found user %s.\n", uname)
