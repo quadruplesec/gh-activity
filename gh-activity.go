@@ -46,18 +46,18 @@ func main() {
 	}
 
 	filtersUsage := fmt.Sprintf("Space-separated list of event types to filter by.\nValid values are:\n - %s",
-		strings.Join(validEvents, "\n - "))
-	filters := flag.String("filters", "", filtersUsage)
+        strings.Join(validEvents, "\n - "))
+    filters := flag.String("filters", "", filtersUsage)
 
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: gh-activity [flags] <username>\n\nFlags:\n")
-		flag.PrintDefaults()
-	}
-	flag.Parse()
+    flag.Usage = func() {
+        fmt.Fprintf(os.Stderr, "Usage: gh-activity [flags] <username1> [username2] ...\n\nFlags:\n")
+        flag.PrintDefaults()
+    }
+    flag.Parse()
 
-	if len(flag.Args()) != 1 {
-		log.Fatalf("Error: Exactly one valid username must be provided after all flags.\nUsage: gh-activity [flags] <username>\nRun 'gh-activity -h' for more help.")
-	}
+	if len(flag.Args()) < 1 {
+        log.Fatalf("Error: At least one valid username must be provided after all flags.\nUsage: gh-activity [flags] <username1> [username2] ...\nRun 'gh-activity -h' for more help.")
+    }
 
 	var filtersSlice []string
 	if *filters != "" {
