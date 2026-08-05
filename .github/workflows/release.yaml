@@ -26,11 +26,11 @@ jobs:
       uses: actions/setup-go@v4
       with:
         go-version: '1.26.5'
-    
+
     - name: Build Binary
       run: |
         # Set target OS and Architecture, then build
-        GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o gh-activity-${{ matrix.goos }}-${{ matrix.goarch }}
+        GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o gh-activity-${{ matrix.goos }}-${{ matrix.goarch }} ./cmd/gh-activity
         
         # Windows requires the .exe file extension
         if [ "${{ matrix.goos}}" = "windows" ]; then
