@@ -23,15 +23,16 @@ func URLToCacheKey(urlStr string) string {
 	return clean + ".json"
 }
 
-func SaveCache(activity ActivityEnvelope, cacheKey string) error {
+func GetAppCacheDir() (string, error) {
 	cacheDir, err := os.UserCacheDir()
 	if err != nil {
-		return err
+		return "", err
 	}
-	appCacheDir := filepath.Join(cacheDir, "gh-activity")
+	return filepath.Join(cacheDir, "gh-activity"), nil
+}
 
-	err = os.MkdirAll(appCacheDir, 0o700) // 0o700 -> rwx------
-	if err != nil {
+func SaveCache(appCacheDir string, activity ActivityEnvelope, cacheKey string) error {
+	if err := os.MkdirAll(appCacheDir, 0o700); err != nil { // 0o700 -> rwx------ 
 		return err
 	}
 
@@ -49,12 +50,7 @@ func IsStale(envelope ActivityEnvelope) bool {
 	return time.Since(envelope.FetchedAt) > envelope.TTL
 }
 
-func LoadCache(cacheKey string) (ActivityEnvelope, error) {
-	cacheDir, err := os.UserCacheDir()
-	if err != nil {
-		return ActivityEnvelope{}, err
-	}
-	appCacheDir := filepath.Join(cacheDir, "gh-activity")
+func LoadCache(appCacheDir, cacheKey string) (ActivityEnvelope, error) {
 	filePath := filepath.Join(appCacheDir, cacheKey)
 
 	data, err := os.ReadFile(filePath)

@@ -59,8 +59,13 @@ func createCachedResponse(req *http.Request, activity ActivityFeed) (*http.Respo
 
 func (c *CachingMiddleware) RoundTrip(req *http.Request) (*http.Response, error) {
 	cacheKey := URLToCacheKey(req.URL.Path)
+	appCacheDir, err := GetAppCacheDir()
+	if err != nil {
+		// If we can't find the cache for some reason, ignore it
+		return c.Base.RoundTrip(req)
+	}
 
-	envelope, err := LoadCache(cacheKey)
+	envelope, err := LoadCache(appCacheDir, cacheKey)
 
 	// Cache Miss
 	if err != nil {
@@ -95,7 +100,7 @@ func (c *CachingMiddleware) RoundTrip(req *http.Request) (*http.Response, error)
 			TTL:       parseMaxAge(response.Header.Get("Cache-Control")),
 		}
 
-		SaveCache(envelope, cacheKey)
+		SaveCache(appCacheDir, envelope, cacheKey)
 
 		// We use NopCloser so that, when the caller function attempts to close to body
 		// nothing will happen.
@@ -125,7 +130,7 @@ func (c *CachingMiddleware) RoundTrip(req *http.Request) (*http.Response, error)
 	// Cache is still valid
 	if response.StatusCode == http.StatusNotModified {
 		envelope.FetchedAt = time.Now()
-		SaveCache(envelope, cacheKey)
+		SaveCache(appCacheDir, envelope, cacheKey)
 		return createCachedResponse(req, envelope.Activity)
 	}
 	// Cache Invalidation
@@ -148,7 +153,7 @@ func (c *CachingMiddleware) RoundTrip(req *http.Request) (*http.Response, error)
 			TTL:       parseMaxAge(response.Header.Get("Cache-Control")),
 		}
 
-		SaveCache(envelope, cacheKey)
+		SaveCache(appCacheDir, envelope, cacheKey)
 
 		response.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 		return response, nil
