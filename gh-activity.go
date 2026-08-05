@@ -9,6 +9,7 @@ import (
 	"os"
 	"slices"
 	"strings"
+	"sync"
 
 	"github.com/quadruplesec/gh-activity/github"
 )
@@ -82,41 +83,53 @@ func main() {
 		Transport: github.NewCachingMiddleware(http.DefaultTransport, appCacheDir),
 	}
 
+	var wg sync.WaitGroup
+
 	for _, username := range usernames {
-		request := fmt.Sprintf("https://api.github.com/users/%s/events", username)
+		wg.Add(1)
 
-		resp, err := client.Get(request)
-		if err != nil {
-			log.Fatalf("Network error: %v", err)
-		}
-		defer resp.Body.Close()
+		go func(uname string) {
+			defer wg.Done()
 
-		if resp.StatusCode != http.StatusOK {
-			log.Fatalf("GitHub API returned status: %s", resp.Status)
-		}
+			request := fmt.Sprintf("https://api.github.com/users/%s/events", uname)
 
-		var jsonResponse []github.Event
-		if err := json.NewDecoder(resp.Body).Decode(&jsonResponse); err != nil {
-			log.Fatalf("Error parsing JSON: %v", err)
-		}
-		resp.Body.Close()
-
-		var filteredEvents github.ActivityFeed
-		for _, event := range jsonResponse {
-			// If specific events were set with the filters flag, remove them
-			if len(filtersSlice) > 0 && !slices.Contains(filtersSlice, event.Type) {
-				continue
+			resp, err := client.Get(request)
+			if err != nil {
+				log.Printf("Network error for %s: %v\n", uname, err)
+				return
 			}
-			filteredEvents = append(filteredEvents, event)
-		}
 
-		fmt.Printf("Recent GitHub Activity of %s:\n", username)
-		if len(filteredEvents) > 0 {
-			for _, line := range filteredEvents.Format() {
-				fmt.Println(line)
+			if resp.StatusCode != http.StatusOK {
+				log.Printf("GitHub API returned status %s for %s\n", resp.Status, uname)
+				resp.Body.Close()
+				return
 			}
-			return
-		}
-		fmt.Println("No activity was found.")
+
+			var jsonResponse []github.Event
+			if err := json.NewDecoder(resp.Body).Decode(&jsonResponse); err != nil {
+				log.Printf("Error parsing JSON for %s: %v\n", uname, err)
+				resp.Body.Close()
+				return
+			}
+			resp.Body.Close()
+
+			var filteredEvents github.ActivityFeed
+			for _, event := range jsonResponse {
+				// If specific events were set with the filters flag, remove them
+				if len(filtersSlice) > 0 && !slices.Contains(filtersSlice, event.Type) {
+					continue
+				}
+				filteredEvents = append(filteredEvents, event)
+			}
+
+			fmt.Printf("Recent GitHub Activity of %s:\n", username)
+			if len(filteredEvents) > 0 {
+				for _, line := range filteredEvents.Format() {
+					fmt.Println(line)
+				}
+				return
+			}
+			fmt.Println("No activity was found.")
+		}(username)
 	}
 }
