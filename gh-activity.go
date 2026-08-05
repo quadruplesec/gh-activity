@@ -132,4 +132,6 @@ func main() {
 			fmt.Println("No activity was found.")
 		}(username)
 	}
+
+	wg.Wait()
 }
