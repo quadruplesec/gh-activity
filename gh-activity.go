@@ -74,8 +74,13 @@ func main() {
 	request := fmt.Sprintf("https://api.github.com/users/%s/events", username)
 
 	// HTTP client with custom middleware to handle caching
+	appCacheDir, err := github.GetAppCacheDir()
+	if err != nil {
+		log.Fatalf("Could not locate the system cache directory: %v", err)
+	}
+
 	client := &http.Client{
-		Transport: github.NewCachingMiddleware(http.DefaultTransport),
+		Transport: github.NewCachingMiddleware(http.DefaultTransport, appCacheDir),
 	}
 
 	resp, err := client.Get(request)

@@ -11,14 +11,18 @@ import (
 )
 
 type CachingMiddleware struct {
-	Base http.RoundTripper
+	Base     http.RoundTripper
+	CacheDir string
 }
 
-func NewCachingMiddleware(base http.RoundTripper) *CachingMiddleware {
+func NewCachingMiddleware(base http.RoundTripper, cacheDir string) *CachingMiddleware {
 	if base == nil {
 		base = http.DefaultTransport
 	}
-	return &CachingMiddleware{Base: base}
+	return &CachingMiddleware{
+		Base:     base,
+		CacheDir: cacheDir,
+	}
 }
 
 func parseMaxAge(cacheControl string) time.Duration {
@@ -34,8 +38,8 @@ func parseMaxAge(cacheControl string) time.Duration {
 	return 0
 }
 
-func createCachedResponse(req *http.Request, activity ActivityFeed) (*http.Response, error) {
-	bodyBytes, err := json.Marshal(activity)
+func createCachedResponse(req *http.Request, envelope ActivityEnvelope) (*http.Response, error) {
+	bodyBytes, err := json.Marshal(envelope.Activity)
 	if err != nil {
 		return nil, err
 	}
@@ -53,6 +57,7 @@ func createCachedResponse(req *http.Request, activity ActivityFeed) (*http.Respo
 	}
 
 	fakeResponse.Header.Set("Content-Type", "application/json; charset=utf-8")
+	fakeResponse.Header.Set("ETag", envelope.ETag)
 
 	return &fakeResponse, nil
 }
@@ -60,7 +65,7 @@ func createCachedResponse(req *http.Request, activity ActivityFeed) (*http.Respo
 func (c *CachingMiddleware) RoundTrip(req *http.Request) (*http.Response, error) {
 	cacheKey := URLToCacheKey(req.URL.Path)
 
-	envelope, err := LoadCache(cacheKey)
+	envelope, err := LoadCache(c.CacheDir, cacheKey)
 
 	// Cache Miss
 	if err != nil {
@@ -95,7 +100,7 @@ func (c *CachingMiddleware) RoundTrip(req *http.Request) (*http.Response, error)
 			TTL:       parseMaxAge(response.Header.Get("Cache-Control")),
 		}
 
-		SaveCache(envelope, cacheKey)
+		SaveCache(c.CacheDir, envelope, cacheKey)
 
 		// We use NopCloser so that, when the caller function attempts to close to body
 		// nothing will happen.
@@ -106,7 +111,7 @@ func (c *CachingMiddleware) RoundTrip(req *http.Request) (*http.Response, error)
 	// Cache is still fresh
 	if !IsStale(envelope) {
 		// Create fake HTTP response and send it to the caller
-		return createCachedResponse(req, envelope.Activity)
+		return createCachedResponse(req, envelope)
 	}
 
 	// Stale Cache
@@ -125,8 +130,8 @@ func (c *CachingMiddleware) RoundTrip(req *http.Request) (*http.Response, error)
 	// Cache is still valid
 	if response.StatusCode == http.StatusNotModified {
 		envelope.FetchedAt = time.Now()
-		SaveCache(envelope, cacheKey)
-		return createCachedResponse(req, envelope.Activity)
+		SaveCache(c.CacheDir, envelope, cacheKey)
+		return createCachedResponse(req, envelope)
 	}
 	// Cache Invalidation
 	if response.StatusCode == http.StatusOK {
@@ -148,7 +153,7 @@ func (c *CachingMiddleware) RoundTrip(req *http.Request) (*http.Response, error)
 			TTL:       parseMaxAge(response.Header.Get("Cache-Control")),
 		}
 
-		SaveCache(envelope, cacheKey)
+		SaveCache(c.CacheDir, envelope, cacheKey)
 
 		response.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 		return response, nil
