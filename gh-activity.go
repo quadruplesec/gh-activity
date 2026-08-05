@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -9,7 +8,6 @@ import (
 	"os"
 	"slices"
 	"strings"
-	"sync"
 
 	"github.com/quadruplesec/gh-activity/github"
 )
@@ -83,62 +81,5 @@ func main() {
 		Transport: github.NewCachingMiddleware(http.DefaultTransport, appCacheDir),
 	}
 
-	var wg sync.WaitGroup
-	var mu sync.Mutex
-
-	for _, username := range usernames {
-		wg.Add(1)
-
-		go func(uname string) {
-			defer wg.Done()
-
-			request := fmt.Sprintf("https://api.github.com/users/%s/events", uname)
-
-			resp, err := client.Get(request)
-			if err != nil {
-				log.Printf("Network error for %s: %v\n", uname, err)
-				return
-			}
-
-			if resp.StatusCode != http.StatusOK {
-				log.Printf("GitHub API returned status %s for %s\n", resp.Status, uname)
-				resp.Body.Close()
-				return
-			}
-
-			var jsonResponse []github.Event
-			if err := json.NewDecoder(resp.Body).Decode(&jsonResponse); err != nil {
-				log.Printf("Error parsing JSON for %s: %v\n", uname, err)
-				resp.Body.Close()
-				return
-			}
-			resp.Body.Close()
-
-			var filteredEvents github.ActivityFeed
-			for _, event := range jsonResponse {
-				// If specific events were set with the filters flag, remove them
-				if len(filtersSlice) > 0 && !slices.Contains(filtersSlice, event.Type) {
-					continue
-				}
-				filteredEvents = append(filteredEvents, event)
-			}
-
-			mu.Lock()
-
-			fmt.Printf("Recent GitHub Activity of %s:\n", username)
-			if len(filteredEvents) > 0 {
-				for _, line := range filteredEvents.Format() {
-					fmt.Println(line)
-				}
-			} else {
-				fmt.Printf("No activity was found user %s.\n", uname)
-			}
-			
-			fmt.Println() // Blank Line between users
-
-			mu.Unlock()
-		}(username)
-	}
-
-	wg.Wait()
+	FetchUsers(usernames, filtersSlice, client, os.Stdout)
 }
