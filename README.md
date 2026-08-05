@@ -1,5 +1,10 @@
 # GitHub Activity CLI (gh-activity)
 
+[![Run Unit Tests](https://github.com/quadruplesec/gh-activity/actions/workflows/test.yaml/badge.svg)](https://github.com/quadruplesec/gh-activity/actions)
+[![Build and Release](https://github.com/quadruplesec/gh-activity/actions/workflows/release.yaml/badge.svg)](https://github.com/quadruplesec/gh-activity/actions)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/quadruplesec/gh-activity)](https://go.dev/)
+[![License](https://img.shields.io/github/license/quadruplesec/gh-activity)](https://github.com/quadruplesec/gh-activity/blob/main/LICENSE)
+
 ![Terminal output showing GitHub activity for multiple users](assets/demo.png)
 
 This repository contains a command-line interface (CLI) tool written in Go that fetches, filters, and displays the recent public GitHub activity of one or multiple users directly in the terminal.
