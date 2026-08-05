@@ -1,10 +1,12 @@
-package github
+package github_test
 
 import (
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/quadruplesec/gh-activity/github"
 )
 
 func TestURLToCacheKey(t *testing.T) {
@@ -37,7 +39,7 @@ func TestURLToCacheKey(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			actual := URLToCacheKey(testCase.input)
+			actual := github.URLToCacheKey(testCase.input)
 			if actual != testCase.expected {
 				t.Errorf("Expected %q, got %q", testCase.expected, actual)
 			}
@@ -60,7 +62,7 @@ func TestLoadCache(t *testing.T) {
 		t.Fatalf("Error when writing to test path: %v", err)
 	}
 
-	envelope, err := LoadCache(tempDir, cacheKey)
+	envelope, err := github.LoadCache(tempDir, cacheKey)
 	if err != nil {
 		t.Fatalf("LoadCache failed: %v", err)
 	}
@@ -78,11 +80,11 @@ func TestSaveCache(t *testing.T) {
 	tempDir := t.TempDir()
 	cacheKey := "test_save.json"
 
-	envelope := ActivityEnvelope{
+	envelope := github.ActivityEnvelope{
 		ETag: "save-etag",
 	}
 
-	err := SaveCache(tempDir, envelope, cacheKey)
+	err := github.SaveCache(tempDir, envelope, cacheKey)
 	if err != nil {
 		t.Fatalf("SaveCache failed: %v", err)
 	}
