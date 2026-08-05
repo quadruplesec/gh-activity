@@ -32,7 +32,7 @@ func GetAppCacheDir() (string, error) {
 }
 
 func SaveCache(appCacheDir string, activity ActivityEnvelope, cacheKey string) error {
-	if err := os.MkdirAll(appCacheDir, 0o700); err != nil { // 0o700 -> rwx------ 
+	if err := os.MkdirAll(appCacheDir, 0o700); err != nil { // 0o700 -> rwx------
 		return err
 	}
 
