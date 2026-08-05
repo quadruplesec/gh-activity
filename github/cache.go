@@ -18,6 +18,7 @@ type ActivityEnvelope struct {
 func URLToCacheKey(urlStr string) string {
 	clean := strings.TrimPrefix(urlStr, "https://api.github.com/")
 	clean = strings.TrimPrefix(clean, "/")
+	clean = strings.TrimSuffix(clean, "/")
 	clean = strings.ReplaceAll(clean, "/", "_")
 	return clean + ".json"
 }
@@ -34,7 +35,7 @@ func SaveCache(activity ActivityEnvelope, cacheKey string) error {
 		return err
 	}
 
-	filePath := filepath.Join(appCacheDir, cacheKey+".json")
+	filePath := filepath.Join(appCacheDir, cacheKey)
 
 	data, err := json.Marshal(activity)
 	if err != nil {
@@ -54,7 +55,7 @@ func LoadCache(cacheKey string) (ActivityEnvelope, error) {
 		return ActivityEnvelope{}, err
 	}
 	appCacheDir := filepath.Join(cacheDir, "gh-activity")
-	filePath := filepath.Join(appCacheDir, cacheKey+".json")
+	filePath := filepath.Join(appCacheDir, cacheKey)
 
 	data, err := os.ReadFile(filePath)
 	if err != nil {
