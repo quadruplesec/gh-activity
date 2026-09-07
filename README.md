@@ -37,7 +37,7 @@ It is recommended that you rename the downloaded file to `gh-activity` (or `gh-a
 Make sure you have Go installed (version 1.22+ recommended). Clone the repository and run the following command to compile the binary:
 
 ```bash
-git clone [https://github.com/quadruplesec/gh-activity.git](https://github.com/quadruplesec/gh-activity.git)
+git clone https://github.com/quadruplesec/gh-activity.git
 cd gh-activity
 go build -o gh-activity ./cmd/gh-activity
 ```
